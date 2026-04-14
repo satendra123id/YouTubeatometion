@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Shorts Uploader by sitaram Lodhi</title>
+    <style>
+        :root {
+            --yt-red: #FF0000;
+            --dark-bg: #121212;
+            --card-bg: #1e1e1e;
+            --text-light: #ffffff;
+            --accent: #00e676;
+            --blue: #3ea6ff;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 850px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            margin-bottom: 20px;
+        }
+        h1 { text-align: center; color: var(--yt-red); }
+        h2 { color: var(--accent); font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 30px;}
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .input-group { display: flex; flex-direction: column; margin-bottom: 15px; }
+        label { font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #aaa; }
+        
+        input, textarea {
+            padding: 12px;
+            border: 1px solid #444;
+            background-color: #0f0f0f;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+        textarea { height: 80px; resize: vertical; }
+
+        button {
+            background-color: var(--yt-red);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+            width: 100%;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+        button:hover { filter: brightness(1.2); }
+        .btn-ai { background-color: #9c27b0; }
+        .btn-link { background-color: var(--blue); color: #000; }
+        .btn-save { background-color: #2e7d32; }
+
+        .flex-row { display: flex; gap: 10px; align-items: center; }
+        .divider { text-align: center; margin: 10px 0; color: #777; font-weight: bold; }
+        
+        .status { margin-top: 15px; padding: 12px; border-radius: 6px; display: none; text-align: center; font-weight: bold;}
+        .success { background-color: #1e4620; color: #4caf50; display: block; border: 1px solid #4caf50;}
+        .error { background-color: #4a1414; color: #f44336; display: block; border: 1px solid #f44336;}
+        .info { background-color: #0d47a1; color: #64b5f6; display: block; border: 1px solid #64b5f6;}
+
+        .ad-space {
+            width: 100%; max-width: 850px; height: 90px;
+            background-color: #222; display: flex; align-items: center;
+            justify-content: center; color: #777; border: 1px dashed #555;
+            margin: 20px 0; border-radius: 8px; text-align: center;
+        }
+    </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+    <div class="ad-space">
+        Top Banner Ad (728x90) Yahan Lagayein
+    </div>
+
+    <div class="container">
+        <h1>🎥 Smart YouTube Auto-Uploader</h1>
+        
+        <h2>1. API Keys (Browser Memory me Save)</h2>
+        <div class="grid">
+            <div class="input-group">
+                <label>Google Gemini API Key:</label>
+                <input type="password" id="geminiKey" placeholder="Gemini API Key">
+            </div>
+            <div class="input-group">
+                <label>Google Client ID:</label>
+                <input type="password" id="clientId" placeholder="YouTube Upload Client ID">
+            </div>
+        </div>
+        <button class="btn-save" onclick="saveSettings()">💾 Keys Save Karein</button>
+        <div id="statusMsg" class="status"></div>
+
+        <h2>2. Topic Batao, AI SEO Banayega</h2>
+        <div class="input-group">
+            <textarea id="topicInput" placeholder="Video kis baare me hai? Jaise: Top 3 Hacking tools..."></textarea>
+        </div>
+        <button class="btn-ai" onclick="generateSEO()">✨ AI se Title, Tags & Desc Banayein</button>
+
+        <div id="seoSection" style="display: none; margin-top: 20px;">
+            <div class="input-group">
+                <label>Viral Title:</label>
+                <input type="text" id="ytTitle" maxlength="100">
+            </div>
+            <div class="input-group">
+                <label>Description:</label>
+                <textarea id="ytDesc" style="height: 120px;"></textarea>
+            </div>
+            <div class="input-group">
+                <label>Tags (Comma se alag):</label>
+                <input type="text" id="ytTags">
+            </div>
+        </div>
+
+        <h2>3. Video Dalo aur Publish Karo</h2>
+        
+        <div class="input-group">
+            <label>Option A: Direct Video Link se Fetch Karein (.mp4)</label>
+            <div class="flex-row">
+                <input type="url" id="videoUrl" placeholder="https://example.com/video.mp4" style="flex: 1;">
+                <button class="btn-link" onclick="fetchVideoFromLink()" style="width: auto; margin-top: 0;">⬇️ Fetch</button>
+            </div>
+        </div>
+        
+        <div class="divider">YA</div>
+
+        <div class="input-group">
+            <label>Option B: Phone/PC se Video Select Karein</label>
+            <input type="file" id="videoFile" accept="video/mp4,video/*" style="padding: 10px; background: #222;">
+        </div>
+
+        <button id="uploadBtn" onclick="authenticateAndUpload()">🚀 YouTube Par Upload Karein!</button>
+        <div id="uploadStatus" class="status"></div>
+    </div>
+
+    <div class="ad-space">
+        Bottom Banner Ad Yahan Lagayein
+    </div>
+
+    <script>
+        let accessToken = null;
+        let downloadedVideoBlob = null; // Link se aayi hui file yahan save hogi
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('geminiKey').value = localStorage.getItem('geminiKey') || '';
+            document.getElementById('clientId').value = localStorage.getItem('clientId') || '';
+        });
+
+        function saveSettings() {
+            localStorage.setItem('geminiKey', document.getElementById('geminiKey').value.trim());
+            localStorage.setItem('clientId', document.getElementById('clientId').value.trim());
+            showMsg('statusMsg', '✅ Settings Saved Successfully!', 'success');
+        }
+
+        function showMsg(id, msg, type) {
+            const el = document.getElementById(id);
+            el.className = 'status ' + type;
+            el.innerText = msg;
+        }
+
+        // --- Link Se Video Fetch Karne Ka Logic ---
+        async function fetchVideoFromLink() {
+            const url = document.getElementById('videoUrl').value.trim();
+            if(!url) return showMsg('uploadStatus', '❌ Pehle link toh daaliye!', 'error');
+
+            showMsg('uploadStatus', '⏳ Link se video nikalne ki koshish ho rahi hai...', 'info');
+            try {
+                // Agar source site CORS allow karti hai, toh ye blob (file) me badal jayega
+                const response = await fetch(url);
+                if(!response.ok) throw new Error("Link invalid hai ya server ne block kar diya.");
+                
+                const blob = await response.blob();
+                downloadedVideoBlob = new File([blob], "downloaded_video.mp4", { type: "video/mp4" });
+                
+                showMsg('uploadStatus', '✅ Video Fetch ho gaya! Ab aap "Upload" button daba sakte hain.', 'success');
+                document.getElementById('videoFile').value = ''; // Local file input clear kar do
+            } catch (error) {
+                showMsg('uploadStatus', '⚠️ Browser Security (CORS) ne direct download block kar diya. Kripya video khud download karke Option B se select karein.', 'error');
+                downloadedVideoBlob = null;
+            }
+        }
+
+        // --- Gemini AI Logic ---
+        async function generateSEO() {
+            const topic = document.getElementById('topicInput').value.trim();
+            const apiKey = localStorage.getItem('geminiKey');
+            if(!topic || !apiKey) return showMsg('statusMsg', 'Topic aur Gemini API key daalna zaroori hai!', 'error');
+
+            showMsg('statusMsg', '🤖 AI Title aur Description bana raha hai...', 'info');
+            const prompt = `Act as an expert YouTube SEO manager. I am making a YouTube Short about: "${topic}". 
+            Provide the response strictly in JSON format with exactly 3 keys: "title" (catchy, Hindi/English mix, under 90 chars, including #Shorts), "description" (engaging description with 5-6 hashtags), and "tags" (comma separated trending keywords). Do not add markdown or backticks to the JSON.`;
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                
+                const data = await res.json();
+                let textRes = data.candidates[0].content.parts[0].text.trim();
+                
+                if(textRes.startsWith("```json")) {
+                    textRes = textRes.replace(/```json/g, '').replace(/```/g, '').trim();
+                }
+
+                const seoData = JSON.parse(textRes);
+                
+                document.getElementById('ytTitle').value = seoData.title;
+                document.getElementById('ytDesc').value = seoData.description;
+                document.getElementById('ytTags').value = seoData.tags;
+                
+                document.getElementById('seoSection').style.display = 'block';
+                showMsg('statusMsg', '✅ AI ne data bana diya! Ab aap video dal kar upload karein.', 'success');
+            } catch (err) {
+                showMsg('statusMsg', '❌ AI Error: ' + err.message, 'error');
+            }
+        }
+
+        // --- YouTube Upload Logic ---
+        function authenticateAndUpload() {
+            const clientId = localStorage.getItem('clientId');
+            const localFile = document.getElementById('videoFile').files[0];
+            
+            // Faisla karna: Link wali file leni hai ya Manual wali?
+            const finalVideoFile = downloadedVideoBlob || localFile;
+            
+            if (!clientId) return showMsg('uploadStatus', '❌ Pehle Google Client ID save karein!', 'error');
+            if (!finalVideoFile) return showMsg('uploadStatus', '❌ Koi video select nahi hai. Link se Fetch karein YA file select karein!', 'error');
+
+            showMsg('uploadStatus', '🔐 Google me login ho raha hai...', 'info');
+
+            const tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: clientId,
+                scope: '[https://www.googleapis.com/auth/youtube.upload](https://www.googleapis.com/auth/youtube.upload)',
+                callback: (response) => {
+                    if (response.error) {
+                        showMsg('uploadStatus', '❌ Login Failed!', 'error');
+                        return;
+                    }
+                    accessToken = response.access_token;
+                    uploadVideoToYouTube(finalVideoFile);
+                },
+            });
+            tokenClient.requestAccessToken();
+        }
+
+        async function uploadVideoToYouTube(file) {
+            showMsg('uploadStatus', '⏳ Video YouTube par jaa raha hai... Screen band na karein!', 'info');
+            
+            const title = document.getElementById('ytTitle').value || "Amazing YouTube Short #Shorts";
+            const desc = document.getElementById('ytDesc').value || "Auto-uploaded via AI Script.";
+            const tags = document.getElementById('ytTags').value ? document.getElementById('ytTags').value.split(',') : ["shorts", "viral"];
+
+            const metadata = {
+                snippet: { title: title, description: desc, tags: tags, categoryId: "22" },
+                status: { privacyStatus: "public", selfDeclaredMadeForKids: false }
+            };
+
+            const boundary = '-------314159265358979323846';
+            const delimiter = "\r\n--" + boundary + "\r\n";
+            const close_delim = "\r\n--" + boundary + "--";
+
+            const reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.onload = async function(e) {
+                const fileData = e.target.result;
+                let multipartRequestBody = 
+                    delimiter +
+                    'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+                    JSON.stringify(metadata) +
+                    delimiter +
+                    'Content-Type: ' + file.type + '\r\n\r\n';
+
+                const encoder = new TextEncoder();
+                const uint8Array = encoder.encode(multipartRequestBody);
+                const closeArray = encoder.encode(close_delim);
+
+                const finalBody = new Uint8Array(uint8Array.length + fileData.byteLength + closeArray.length);
+                finalBody.set(uint8Array, 0);
+                finalBody.set(new Uint8Array(fileData), uint8Array.length);
+                finalBody.set(closeArray, uint8Array.length + fileData.byteLength);
+
+                try {
+                    const response = await fetch('[https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status](https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status)', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + accessToken,
+                            'Content-Type': 'multipart/related; boundary=' + boundary
+                        },
+                        body: finalBody
+                    });
+
+                    const data = await response.json();
+                    if(data.error) throw new Error(data.error.message);
+
+                    showMsg('uploadStatus', `🎉 BUMPER HIT! Video Live ho gaya. Video ID: ${data.id}`, 'success');
+                    downloadedVideoBlob = null; // Reset for next video
+                } catch (error) {
+                    showMsg('uploadStatus', `❌ Upload Error: ${error.message}`, 'error');
+                }
+            };
+        }
+    </script>
+</body>
+</html>
